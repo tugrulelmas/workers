@@ -18,7 +18,7 @@ async function hashPassword({ password, providedSalt }: HashPasswordParams) {
   const key = await crypto.subtle.deriveKey(
     {
       name: "PBKDF2",
-      salt: salt,
+      salt: new Uint8Array(salt),
       iterations: 100000,
       hash: "SHA-256",
     },
@@ -46,13 +46,18 @@ interface VerifyPasswordParams {
   passwordAttempt: string;
 }
 
-async function verifyPassword({ storedHash, passwordAttempt }: VerifyPasswordParams) {
+async function verifyPassword({
+  storedHash,
+  passwordAttempt,
+}: VerifyPasswordParams) {
   const [saltHex, originalHash] = storedHash.split(":");
-  const salt = new Uint8Array(saltHex.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)));
+  const salt = new Uint8Array(
+    saltHex.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16))
+  );
 
   const attemptHashWithSalt = await hashPassword({
     password: passwordAttempt,
-    providedSalt: salt
+    providedSalt: salt,
   });
   const [, attemptHash] = attemptHashWithSalt.split(":");
 
